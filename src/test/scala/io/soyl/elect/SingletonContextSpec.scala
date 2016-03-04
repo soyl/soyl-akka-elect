@@ -75,7 +75,7 @@ class SingletonContextSpec extends CassandraSpec with PrivateMethodTester with M
   //    Option(row.getString(Table.Schedule))
   //      .flatMap(s => if (s == "") None else Some(s))
   //      .map(s => new CronExpression(s)),
-  //    Option(row.getDate(Table.Last)).map(d => new DateTime(d)),
+  //    Option(row.getTimestamp(Table.Last)).map(d => new DateTime(d)),
   //    Option(row.getString(Table.State))
   //  )
 
@@ -86,7 +86,7 @@ class SingletonContextSpec extends CassandraSpec with PrivateMethodTester with M
       when(row.getBool(any[String])).thenReturn(true)
       when(row.getInt(any[String])).thenReturn(10)
       when(row.getUUID("lock")).thenReturn(null)
-      when(row.getDate("last")).thenReturn(null)
+      when(row.getTimestamp("last")).thenReturn(null)
       when(row.getString("state")).thenReturn(null)
       when(row.getString("schedule")).thenReturn(null)
       val li: LockInfo = SingletonContext invokePrivate lockInfoFromRow(row)
@@ -101,7 +101,7 @@ class SingletonContextSpec extends CassandraSpec with PrivateMethodTester with M
     //      when(row.getBool(any[String])).thenReturn(true)
     //      when(row.getInt(any[String])).thenReturn(10)
     //      when(row.getUUID("lock")).thenReturn(null)
-    //      when(row.getDate("last")).thenReturn(null)
+    //      when(row.getTimestamp("last")).thenReturn(null)
     //      when(row.getString("state")).thenReturn(null)
     //      when(row.getString("schedule")).thenReturn("")
     //      //val li:LockInfo = SingletonDeps invokePrivate lockInfoFromRow(row)

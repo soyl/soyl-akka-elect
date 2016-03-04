@@ -211,7 +211,7 @@ object SingletonContext {
       Option(row.getString(Table.Schedule))
         .flatMap(s => if (s == "") None else Some(s))
         .map(s => utcCronExpression(s)),
-      Option(row.getDate(Table.Last)).map(d => new DateTime(d)),
+      Option(row.getTimestamp(Table.Last)).map(d => new DateTime(d)),
       Option(row.getString(Table.State))
     )
   }
