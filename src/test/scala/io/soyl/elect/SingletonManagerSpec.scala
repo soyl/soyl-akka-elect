@@ -5,7 +5,7 @@ import java.util.UUID
 import akka.actor.{ActorRef, ActorSystem}
 import akka.testkit.{ImplicitSender, TestActorRef, TestKit}
 import io.soyl.elect.SingletonManager._
-import io.soyl.elect.jobs.{NoOpWorker}
+import io.soyl.elect.jobs.NoOpWorker
 import org.joda.time.{DateTimeZone, DateTime}
 import org.joda.time.format.ISODateTimeFormat
 import org.mockito.Matchers._
