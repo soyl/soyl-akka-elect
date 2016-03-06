@@ -21,8 +21,8 @@ abstract class Worker extends Actor with LazyLogging {
     case Start(state) =>
       context.become(running)
       import context.dispatcher
-      run(state).map { case newState =>
-        context.parent ! Done(newState)
+      run(state).map { case maybeNewState =>
+        context.parent ! Done(maybeNewState)
       } recover { case NonFatal(e) =>
         context.parent ! AbortFailure(e)
       }
@@ -53,9 +53,10 @@ abstract class Worker extends Actor with LazyLogging {
     *
     * @param maybeState
     * @param ex
-    * @return The new state that is the result of the worker's activity
+    * @return The new state that is the result of the worker's activity as [[Option]].
+    *         Some(value) indicates
     */
-  protected def run(maybeState: Option[String])(implicit ex: ExecutionContext): Future[String]
+  protected def run(maybeState: Option[String])(implicit ex: ExecutionContext): Future[Option[String]]
 
 }
 

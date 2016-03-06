@@ -1,6 +1,6 @@
 import net.virtualvoid.sbt.graph.Plugin.graphSettings
 
-val projectVersion = "0.2.1"
+val projectVersion = "0.3.0"
 
 val projectSettings = Seq(
   description := "Runtime leader election with Akka using Cassandra",

@@ -22,20 +22,20 @@ with WordSpecLike with Matchers with BeforeAndAfterAll with BeforeAndAfterEachTe
     "Send 'Done' message to parent with correct state when run() immediately returns." in {
       lazy val p = ParentProbe(Props[NoOpWorker])
       p.sendViaParent(Start(Some(TestState)))
-      p.expectMsg(Done(TestState))
+      p.expectMsg(Done(Some(TestState)))
     }
 
     "Send 'Done' message to parent with correct state when run() executes asynchronously." in {
       lazy val p = ParentProbe(Props(new NoOpDelayedWorker(1.seconds)))
       p.sendViaParent(Start(Some(TestState)))
-      p.expectMsg(2.second, Done(TestState))
+      p.expectMsg(2.second, Done(Some(TestState)))
     }
 
     "Send 'Commit' and 'Done' message to parent with correct state when run() calls commit()." in {
       lazy val p = ParentProbe(Props(new NoOpDelayedCommittingWorker(2.seconds)))
       p.sendViaParent(Start(Some(TestState)))
       p.expectMsg(2.second, Commit(TestState))
-      p.expectMsg(4.second, Done(TestState))
+      p.expectMsg(4.second, Done(Some(TestState)))
     }
 
     "Send 'AbortFailure' message to parent when run() throws an exception" in {

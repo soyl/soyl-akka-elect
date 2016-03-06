@@ -11,43 +11,43 @@ class B(n: Int) extends Worker with LazyLogging {
 
   logger.info("************************ ctpr" + n)
 
-  override def run(state: Option[String])(implicit ex: ExecutionContext): Future[String] = {
+  override def run(state: Option[String])(implicit ex: ExecutionContext): Future[Option[String]] = {
     logger.info("############################################### Running")
     logger.info("############################################### DONE ")
-    Future.successful("next")
+    Future.successful(Some("next"))
   }
 }
 
 class NoOpWorker extends Worker with LazyLogging {
 
-  override def run(state: Option[String])(implicit ex: ExecutionContext): Future[String] = {
+  override def run(state: Option[String])(implicit ex: ExecutionContext): Future[Option[String]] = {
     if(state.isEmpty) throw new IllegalArgumentException("NoOpWorker needs initial state")
-    Future.successful(state.get)
+    Future.successful(Some(state.get))
   }
 }
 
 class NoOpDelayedWorker(delay:FiniteDuration,fail:Boolean = false) extends Worker with LazyLogging {
 
-  override def run(state: Option[String])(implicit ex: ExecutionContext): Future[String] = {
+  override def run(state: Option[String])(implicit ex: ExecutionContext): Future[Option[String]] = {
     if(state.isEmpty) throw new IllegalArgumentException("NoOpWorker needs initial state")
     Future {
       Thread.sleep(delay.toMillis)
       if(fail) throw new RuntimeException(s"NoOpDelayedWorker with fail=$fail failed after $delay")
-      else state.get
+      else Some(state.get)
     }
   }
 }
 
 class NoOpDelayedCommittingWorker(delay:FiniteDuration,fail:Boolean = false) extends Worker with LazyLogging {
 
-  override def run(state: Option[String])(implicit ex: ExecutionContext): Future[String] = {
+  override def run(state: Option[String])(implicit ex: ExecutionContext): Future[Option[String]] = {
     if(state.isEmpty) throw new IllegalArgumentException("NoOpWorker needs initial state")
     Future {
       Thread.sleep(delay.toMillis / 2)
       commit(state.get)
       Thread.sleep(delay.toMillis / 2)
       if(fail) throw new RuntimeException(s"NoOpDelayedWorker with fail=$fail failed after $delay")
-      else state.get
+      else Some(state.get)
     }
   }
 }
@@ -56,10 +56,10 @@ class NoOpDelayedCommittingWorker(delay:FiniteDuration,fail:Boolean = false) ext
 
 class Counter extends Worker with LazyLogging {
 
-  override def run(state: Option[String])(implicit ex: ExecutionContext): Future[String] = {
+  override def run(state: Option[String])(implicit ex: ExecutionContext): Future[Option[String]] = {
     logger.info(s"Counter got $state")
     val c = state.map(Integer.valueOf).getOrElse(0)
-    Future.successful(String.valueOf(c))
+    Future.successful(Some(String.valueOf(c)))
   }
 }
 

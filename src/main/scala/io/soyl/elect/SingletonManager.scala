@@ -20,8 +20,8 @@ class SingletonManager(workerProps: Props, name: String, ec: SingletonContext,
   import SingletonManager._
 
   val id = UUID.randomUUID()
-//  var lockToucher: Option[ActorRef] = None
-//  var worker: Option[ActorRef] = None
+  //  var lockToucher: Option[ActorRef] = None
+  //  var worker: Option[ActorRef] = None
 
   // Randomize start delay so not all singleton managers hit lock at the same time
   val DurationUntilStart = randomDuration(config.initialMaxDelay)
@@ -78,10 +78,10 @@ class SingletonManager(workerProps: Props, name: String, ec: SingletonContext,
           val lockToucher = context.actorOf(LockToucher.props(id, lockInfo, ec,
             (cause: Throwable) => self ! AbortFailure(cause)),
             SingletonManager.toucherName(name))
-          val worker = context.actorOf(workerProps,SingletonManager.workerName(name))
+          val worker = context.actorOf(workerProps, SingletonManager.workerName(name))
           become(running(lockToucher, worker, lockInfo))
           worker ! Start(lockInfo.state)
-          // FIXME Now we are going 'silent', we could also start an info-loop 'I have lock'
+        // FIXME Now we are going 'silent', we could also start an info-loop 'I have lock'
 
       } recover { case NonFatal(e) =>
         logger.error(s"Cannot get lock '${lockInfo.name}': ${e.getMessage}", e)
@@ -111,25 +111,35 @@ class SingletonManager(workerProps: Props, name: String, ec: SingletonContext,
         // FIXME keep trying or not? currently actors will al stop -> maybe become(failed)
         case Success(_) =>
           logger.info(s"Committed for lock '$name' state '$state'; worker still running")
-          // Nothing to do here, since worker is still running.
+        // Nothing to do here, since worker is still running.
       }
 
-    case Done(state: String) =>
+    case Done(maybeNewState: Option[String]) =>
       // save state and update last
       logger.info("_____________________________________ LEADER: Done")
-      ec.storeState(state, name).onComplete {
-        case Failure(e) =>
+      maybeNewState match {
+        case None =>
           Try(context.stop(worker))
           Try(context.stop(lockToucher))
-          logger.error(s"An error occurred when setting state '$state' for lock '$name': ${e.getMessage}. Not resuming to inspection.", e)
-        // FIXME keep trying or not? currently actors will al stop -> maybe become(failed)
-          // set vars to none!!! make func: clean
-        case Success(_) =>
-          Try(context.stop(worker))
-          Try(context.stop(lockToucher))
-          logger.info(s"Work done for lock '$name' with state '$state'")
+          logger.info(s"Work done for lock '$name'. No new state to store")
           system.scheduler.scheduleOnce(lockInfo.checksec.seconds, self, InspectLock)
           become(trying)
+        case Some(state) =>
+          ec.storeState(state, name).onComplete {
+            case Failure(e) =>
+              Try(context.stop(worker))
+              Try(context.stop(lockToucher))
+              logger.error(s"An error occurred when setting state '$state' for lock '$name': ${e.getMessage}. Not resuming to inspection.", e)
+            // FIXME keep trying or not? currently actors will al stop -> maybe become(failed)
+            // to become able to resume work?
+            // set vars to none!!! make func: clean
+            case Success(_) =>
+              Try(context.stop(worker))
+              Try(context.stop(lockToucher))
+              logger.info(s"Work done for lock '$name' with state '$state'")
+              system.scheduler.scheduleOnce(lockInfo.checksec.seconds, self, InspectLock)
+              become(trying)
+          }
       }
 
 
@@ -170,7 +180,7 @@ object SingletonManager extends LazyLogging {
   def apply[T <: Worker : ClassTag](name: String, sc: SingletonContext, config: SingletonManagerConfig)(implicit as: ActorSystem) = {
     val workerProps: Props = Props[T]()
 
-    as.actorOf(Props(new SingletonManager(workerProps, name, sc, config)),leaderName(name))
+    as.actorOf(Props(new SingletonManager(workerProps, name, sc, config)), leaderName(name))
   }
 
   def apply[T <: Worker : ClassTag](creator: => T, name: String, sc: SingletonContext, config: SingletonManagerConfig)(implicit as: ActorSystem) = {
@@ -179,7 +189,7 @@ object SingletonManager extends LazyLogging {
   }
 
 
-  private[elect] case class Done(state: String)
+  private[elect] case class Done(state: Option[String])
 
   private[elect] case class Commit(state: String)
 
